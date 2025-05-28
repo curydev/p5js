@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Art&Technology</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.js"></script>
+    <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+
+        #btn {
+            width: 300px;
+            background-color: #fcfcfc;
+            color: #676767;
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 18px;
+            transition: background-color 0.2s ease-in,
+                color 0.2s ease-in;
+        }
+
+        #btn:hover {
+            background-color: #676767;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 18px;
+            transition: background-color 0.2s ease-in,
+                color 0.2s ease-in;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <script>
+            let startTime;
+            let currentScene = 0;
+            let currentWeight = 0;
+
+            function setup() {
+                createCanvas(windowWidth, windowHeight);
+                angleMode(DEGREES);
+                textFont("Arial");
+                textSize(24);
+                startTime = millis();
+            }
+
+            function draw() {
+                let t = millis() - startTime;
+
+                if (currentScene === 0) {
+                    drawScene1(t);
+                    if (t > 10000) {
+                        currentScene = 1;
+                        startTime = millis(); // 장면2 시간 초기화
+                    }
+                } else if (currentScene === 1) {
+                    let scene2Time = millis() - startTime;
+                    drawScene2(scene2Time);
+                }
+            }
+
+            // -------------------- Scene 1: 시계 + 창문 --------------------
+            function drawScene1(t) {
+                background(255, 250, 200);
+                drawwindow(windowWidth / 10, windowHeight / 4, 2);
+                drawClock(windowWidth * 8 / 10, windowHeight / 5, 350);
+
+                if (t > 1000 && t < 4000) {
+                    drawSubtitle("나 : 벌써 새벽 2시네...?");
+                } else if (t > 5000 && t < 9000) {
+                    drawSubtitle("나 : 너무 배고프다....");
+                }
+            }
+
+            function drawClock(x, y, diameter) {
+                push();
+                translate(x, y);
+
+                stroke(0);
+                strokeWeight(2);
+                fill(255);
+                ellipse(0, 0, diameter);
+
+                fill(0);
+                noStroke();
+                textAlign(CENTER, CENTER);
+                textSize(diameter * 0.08);
+                let r = diameter * 0.4;
+
+                for (let i = 1; i <= 12; i++) {
+                    let angle = i * 30 - 90;
+                    let tx = cos(angle) * r;
+                    let ty = sin(angle) * r;
+                    text(i, tx, ty);
+                }
+
+                // 시침
+                let hourAngle = 2 * 30 - 90;
+                stroke(0, 0, 255);
+                strokeWeight(diameter * 0.035);
+                let hourLength = diameter * 0.25;
+                line(0, 0, cos(hourAngle) * hourLength, sin(hourAngle) * hourLength);
+
+                // 분침
+                let minuteAngle = 0 * 6 - 90;
+                stroke(0);
+                strokeWeight(diameter * 0.02);
+                let minuteLength = diameter * 0.35;
+                line(0, 0, cos(minuteAngle) * minuteLength, sin(minuteAngle) * minuteLength);
+
+                // 초침
+                let s = second();
+                let secondAngle = s * 6 - 90;
+                stroke(255, 0, 0);
+                strokeWeight(diameter * 0.01);
+                let secondLength = diameter * 0.45;
+                line(0, 0, cos(secondAngle) * secondLength, sin(secondAngle) * secondLength);
+
+                fill(0);
+                noStroke();
+                ellipse(0, 0, diameter * 0.03);
+
+                pop();
+            }
+
+            function drawwindow(x, y, z) {
+                push();
+                translate(x, y);
+                scale(z);
+
+                fill(80);
+                rect(0, 0, 300, 300);
+
+                fill(10, 10, 30);
+                rect(20, 20, 260, 260);
+
+                fill(255, 255, 200);
+                ellipse(200, 100, 60, 60);
+
+                fill(10, 10, 30);
+                ellipse(210, 100, 60, 60);
+
+                stroke(80);
+                strokeWeight(4);
+                line(20, 150, 280, 150);
+                line(150, 20, 150, 280);
+
+                pop();
+            }
+
+            // -------------------- Scene 2: 체중계 --------------------
+            function drawScene2(t) {
+                background(160, 110, 80);
+                drawFloor();
+
+                if (t < 1000) {
+                    drawScale(windowWidth / 3, windowHeight / 4, 3, false, true, 0);
+                } else if (t < 2000) {
+                    drawScale(windowWidth / 3, windowHeight / 4, 3, true, true, 0);
+                } else if (t < 5000) {
+                    let progress = constrain((t - 2000) / 3000, 0, 1);
+                    currentWeight = floor(progress * 11) * 5;
+                    if (currentWeight > 55) currentWeight = 55;
+                    drawScale(windowWidth / 3, windowHeight / 4, 3, true, true, currentWeight);
+                } else {
+                    drawScale(windowWidth / 3, windowHeight / 4, 3, true, true, 55);
+
+                    if (t < 7000) {
+                        drawSubtitle("나 : 흠... 55키로...?");
+                    } else if (t < 9000) {
+                        drawSubtitle("나 : 라면 먹어도 되겠는걸!");
+                        skipToNextScene();
+                    }
+                }
+            }
+
+            function drawFloor() {
+                stroke(160, 210, 180);
+                strokeWeight(1);
+                for (let j = 0; j < height; j += 80) {
+                    line(0, j, width, j);
+                }
+            }
+
+            function drawScale(x, y, scaleSize, showLeft, showRight, weight) {
+                let w = 200 * scaleSize;
+                let h = 180 * scaleSize;
+                let r = 20 * scaleSize;
+                let displayW = 100 * scaleSize;
+                let displayH = 40 * scaleSize;
+                let footW = 60 * scaleSize;
+                let footH = 100 * scaleSize;
+
+                fill(180);
+                rect(x, y, w, h, r);
+
+                fill(30);
+                rect(x + w / 2 - displayW / 2, y + 20 * scaleSize, displayW, displayH, 5 * scaleSize);
+
+                fill(0, 255, 0);
+                textAlign(CENTER, CENTER);
+                textSize(20 * scaleSize);
+                text(weight.toFixed(1) + " kg", x + w / 2, y + 20 * scaleSize + displayH / 2);
+
+                fill(255, 220, 180);
+                if (showLeft) {
+                    ellipse(x + w * 0.3, y + h * 0.6, footW, footH);
+                }
+                if (showRight) {
+                    ellipse(x + w * 0.7, y + h * 0.6, footW, footH);
+                }
+            }
+
+            // -------------------- 공통 자막 --------------------
+            function drawSubtitle(textContent) {
+                push();
+                stroke(255);
+                strokeWeight(2);
+                fill(0);
+                textAlign(CENTER, CENTER);
+                textSize(50);
+                text(textContent, width * 3 / 5, height - 40);
+                pop();
+            }
+
+            function skipToNextScene() {
+                let btn = createButton('다음 장면으로 넘어가려면 클릭하세요'); // 버튼 생성
+                btn.position(width - 320, height - 80);
+                btn.id('btn');
+
+                btn.mousePressed(() => {
+                    location.href = ("/p5js/asset/html/scene2.html");
+                    btn.hide();
+                });
+            }
+        </script>
+    </div>
+</body>
+
+</html>

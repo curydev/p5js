@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Art&Technology</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.js"></script>
+    <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+
+        #btn {
+            width: 300px;
+            background-color: #fcfcfc;
+            color: #676767;
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 18px;
+            transition: background-color 0.2s ease-in,
+                color 0.2s ease-in;
+        }
+
+        #btn:hover {
+            background-color: #676767;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 18px;
+            transition: background-color 0.2s ease-in,
+                color 0.2s ease-in;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <script>
+            let waterLevel = 0;
+            let maxWaterLevel = 150;
+            let pouring = false;
+
+            // 수도꼭지 위치 저장용
+            let faucetX = 0;
+            let faucetY = 0;
+            let faucetSize = 0;
+
+
+            let nextBtnCreated = false;
+            let waterSound;
+
+            /*
+
+            function preload() {
+                waterSound = loadSound('물 따르는 소리.mp3');
+            }
+
+            */
+
+            function setup() {
+                createCanvas(windowWidth, windowHeight);
+                ellipseMode(CENTER);
+                rectMode(CENTER);
+            }
+
+            function draw() {
+                checkWaterLevel();
+                background(240);
+                fill(210, 180, 140);
+                rect(0, 0, windowWidth * 2, windowHeight * 2);
+                fill(200);
+                rect(windowWidth / 2, windowHeight / 2, 900, 500);
+
+                let x = width / 2;
+                let y = height / 2;
+                let baseSize = 200;
+
+                faucetX = x - 150;
+                faucetY = y - 380;
+                faucetSize = baseSize * 1.7;
+
+                drawFaucetWithWater(faucetX, faucetY, faucetSize);
+                drawPot(x, y, baseSize * 2);
+
+                if (!pouring && waterLevel === 0) {
+                    drawArrowGuide(faucetX - 50, faucetY);
+                }
+
+            }
+
+            function drawPot(x, y, baseSize) {
+                fill(80);
+                rect(x - 10, y + 300, 70, 300); // 냄비 손잡이
+
+                stroke(0);
+                strokeWeight(9);
+                noFill();
+                ellipse(x, y, baseSize * 0.95, baseSize * 0.95); // 냄비 테두리
+
+                noStroke();
+                fill(220);
+                ellipse(x, y, baseSize * 0.95, baseSize * 0.95); // 냄비 내부 바닥
+
+                let waterAlpha = map(waterLevel, 0, maxWaterLevel, 0, 255);
+                fill(0, 150, 255, waterAlpha); // 물
+                ellipse(x, y, baseSize * 0.9, baseSize * 0.9);
+            }
+
+            function drawFaucetWithWater(x, y, baseSize) {
+                let pipeWidth = baseSize * 0.2;
+                let pipeHeight = baseSize * 0.7;
+
+                fill(100);
+                rect(x, y + pipeHeight / 2, pipeWidth, pipeHeight, 5);
+                rect(x + pipeWidth, y, pipeHeight, pipeWidth, 10);
+                ellipse(x + pipeWidth + pipeHeight / 2, y, pipeWidth, pipeWidth);
+
+                stroke(160);
+                strokeWeight(4);
+                line(x, y - 10, x, y + 10);
+                line(x - 10, y, x + 10, y);
+                noStroke();
+
+                if (pouring) {
+                    fill(0, 150, 255, 180);
+                    rect(x + pipeWidth + pipeHeight / 2, y + 150, pipeWidth * 0.5, 350, 5);
+
+                    if (waterLevel < maxWaterLevel) {
+                        waterLevel += 1;
+                    }
+                }
+            }
+
+            function mousePressed() {
+                let pipeWidth = faucetSize * 0.2;
+                let pipeHeight = faucetSize * 0.7;
+
+                if (
+                    mouseX >= faucetX - pipeWidth / 2 &&
+                    mouseX <= faucetX + pipeWidth / 2 &&
+                    mouseY >= faucetY &&
+                    mouseY <= faucetY + pipeHeight
+                ) {
+                    pouring = true;
+
+                    if (!waterSound.isPlaying()) {
+                        waterSound.loop();
+                    }
+                }
+            }
+
+            function mouseReleased() {
+                pouring = false;
+                if (waterSound.isPlaying()) {
+                    waterSound.stop();
+                }
+            }
+
+            function drawArrowGuide(x, y) {
+                push();
+                textAlign(CENTER, CENTER);
+                textSize(24);
+                fill(50);
+                text("냄비에 물을 따라주세요!!", x + 50, y - 80);
+
+                if (frameCount % 60 < 30) {
+                    fill(255, 0, 0);
+                    noStroke();
+
+                    beginShape();
+                    vertex(x + 40, y - 60);
+                    vertex(x + 60, y - 60);
+                    vertex(x + 50, y - 40);
+                    endShape(CLOSE);
+                }
+                pop();
+            }
+
+            function windowResized() {
+                resizeCanvas(windowWidth, windowHeight);
+            }
+
+
+            function checkWaterLevel() {
+                if (waterLevel === maxWaterLevel) {
+                    skipToNextScene();
+                }
+            }
+            function skipToNextScene() {
+                if (!nextBtnCreated) {
+                    let btn = createButton('다음 장면으로 넘어가려면 클릭하세요');
+                    btn.position(width - 320, height - 80);
+                    btn.id('btn');
+                    btn.mousePressed(() => {
+                        location.href = ("/p5js/asset/html/scene3.html");
+                    });
+                    nextBtnCreated = true; // 버튼 생성 플래그
+                }
+            }
+
+        </script>
+    </div>
+</body>
+
+</html>

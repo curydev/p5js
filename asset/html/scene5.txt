@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Art&Technology</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.js"></script>
+    <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <script>
+            let noodles = [];
+            let eating = false;
+            let eatenCount = 0;
+            let maxNoodles = 15;
+            let chopstickY = 400;
+            let eatingProgress = 0;
+
+            function setup() {
+                createCanvas(600, 600);
+                angleMode(DEGREES);
+                generateNoodles();
+                generatePa();
+
+            }
+
+            function draw() {
+                background(245, 235, 210);
+                drawTable();
+                drawBowl();
+                drawNoodles();
+                drawChopsticks();
+                drawEgg();
+                drawPa();
+            }
+
+            function drawTable() {
+                fill(170, 120, 70);
+                rect(0, 150, width, width);
+            }
+
+            function drawBowl() {
+                fill(230, 184, 0);
+                ellipse(width / 2, 400, 250, 250);
+                fill(255, 153, 51); // 국물
+                ellipse(width / 2, 400, 200, 200);
+            }
+            function drawEgg() {
+                fill(255);
+                ellipse(333, 346, 80, 100);
+                fill(255, 255, 0);
+                ellipse(333, 360, 50, 55);
+            }
+            function generatePa() {
+                for (let i = 0; i < 20; i++) {
+                    let angle = random(0, 360);
+                    let r = random(30, 80);
+                    let x = width / 2 + cos(angle) * r;
+                    let y = 400 + sin(angle) * r;
+                    let rot = random(-45, 45);
+                    greenOnions.push({ x, y, rot }); // 좌표와 각도 저장
+                }
+            }
+            function drawPa() {
+                fill(51, 204, 51);
+                for (let i = 0; i < greenOnions.length; i++) {
+                    let g = greenOnions[i];
+                    push();
+                    translate(g.x, g.y);
+                    rotate(g.rot);
+                    fill(51, 204, 51);
+                    noStroke();
+                    rect(0, 0, 3, 15, 2); // 둥근 모서리로 파 표현
+                    pop();
+                }
+            }
+            function generateNoodles() {
+                noodles = [];
+                for (let i = 0; i < maxNoodles; i++) {
+                    let angle = random(0, 360);
+                    let r = random(40, 90);
+                    let x = width / 2 + cos(angle) * r;
+                    let y = 400 + sin(angle) * r;
+                    noodles.push({ x, y, eaten: false });
+                }
+            }
+
+            function drawNoodles() {
+                stroke(255, 200, 0);
+                strokeWeight(3);
+                noFill();
+                for (let i = 0; i < noodles.length; i++) {
+                    let n = noodles[i];
+                    if (!n.eaten) {
+                        beginShape();
+                        for (let j = 0; j < 10; j++) {
+                            let nx = n.x + sin(j * 20) * 5;
+                            let ny = n.y + j * 2;
+                            curveVertex(nx, ny);
+                        }
+                        endShape();
+                    }
+                }
+            }
+
+            function drawChopsticks() {
+                if (eating && eatingProgress < 1) {
+                    eatingProgress += 0.02;
+                }
+
+                let startX = width / 2 - 30;
+                let endX = width / 2;
+                let startY = height;
+                let endY = 300;
+
+                let x1 = lerp(startX, endX - 20, eatingProgress);
+                let y1 = lerp(startY, endY, eatingProgress);
+                let x2 = lerp(startX + 10, endX + 20, eatingProgress);
+                let y2 = lerp(startY - 10, endY + 10, eatingProgress);
+
+                stroke(90);
+                strokeWeight(6);
+                line(x1, y1, x2, y2);
+
+                if (eatingProgress >= 1 && eatenCount < noodles.length) {
+                    // 면 하나 먹음
+                    for (let i = 0; i < noodles.length; i++) {
+                        if (!noodles[i].eaten) {
+                            noodles[i].eaten = true;
+                            eatenCount++;
+                            break;
+                        }
+                    }
+                    eating = false;
+                    eatingProgress = 0;
+                }
+            }
+
+            function mousePressed() {
+                if (!eating && eatenCount < noodles.length) {
+                    eating = true;
+                }
+            }
+        </script>
+    </div>
+</body>
+
+</html>

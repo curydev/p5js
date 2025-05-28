@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Art&Technology</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.js"></script>
+    <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+
+        #btn {
+            width: 300px;
+            background-color: #fcfcfc;
+            color: #676767;
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 18px;
+            transition: background-color 0.2s ease-in,
+                color 0.2s ease-in;
+        }
+
+        #btn:hover {
+            background-color: #676767;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 18px;
+            transition: background-color 0.2s ease-in,
+                color 0.2s ease-in;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <script>
+            let creditY;
+
+
+            function setup() {
+                createCanvas(windowWidth, windowHeight);
+                textAlign(CENTER, TOP);
+                creditY = height; // 화면 아래에서 시작
+            }
+
+            function draw() {
+                background(0);
+                fill(255);
+                textSize(24);
+                let spacing = 40;
+
+                let credits = [
+                    "<제작 및 역할 분담>",
+                    "",
+                    "장한결 : ml5.js 활용 인터랙션, 병합, 연출, scene3, 4",
+                    "채시우 : scene 5, 6",
+                    "허진 : 연출, 스토리보드, scene1, 2",
+                    "",
+                    "",
+                    " <제작자 소감>",
+                    "",
+                    "장한결 : ",
+                    "채시우 : ",
+                    "허진 : ",
+                    "",
+                    "",
+                    "<AI 제작 콘텐츠>",
+                    "",
+                    "",
+                    "<코드에서의 AI 사용 비율>",
+                    "",
+                    "",
+                    "",
+                    "감사합니다!",
+                ];
+
+                for (let i = 0; i < credits.length; i++) {
+                    text(credits[i], width / 2, creditY + i * spacing);
+                }
+
+                creditY -= 1.6; // 자연스럽게 위로 올라가는 속도
+            }
+
+            function windowResized() {
+                resizeCanvas(windowWidth, windowHeight);
+            }
+        </script>
+    </div>
+</body>
+
+</html>

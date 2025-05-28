@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Art&Technology</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.js"></script>
+    <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <script>
+            let showStartScreen = true;
+            let startButton;
+            let ramenImg;
+
+            function preload() {
+                ramenImg = loadImage("/asset/image/ramen.png");
+            }
+
+            function setup() {
+                createCanvas(windowWidth, windowHeight);
+                textAlign(CENTER, CENTER);
+
+                // 시작하기 버튼 생성 (더 크게!)
+                startButton = createButton("🍜 시작하기");
+                startButton.position(width / 2 - 90, height / 2 + 120); // 위치 조정
+                startButton.size(180, 60); // 버튼 사이즈 확대
+                startButton.style("font-size", "24px"); // 글씨 크기 확대
+                startButton.style("background-color", "#ffcc66");
+                startButton.style("border", "none");
+                startButton.style("border-radius", "15px"); // 버튼 둥글게 더 강조
+                startButton.style("cursor", "pointer");
+                startButton.style("font-weight", "bold");
+
+                startButton.mousePressed(() => {
+                    location.href = ("./p5js/asset/html/scene1.html");
+                });
+            }
+
+            function draw() {
+                background(255);
+
+                if (showStartScreen) {
+                    drawStartScreen();
+                } else {
+                    drawMainScene();
+                }
+            }
+
+            function drawStartScreen() {
+                background(255, 240, 210);
+
+                // 제목 (더 크게!)
+                textSize(80);
+                fill(255, 80, 0);
+                textFont("Comic Sans MS");
+                text(" 라면 끓이기 ", width / 2, height / 2 - 120);
+
+                // 제작자명
+                textSize(20);
+                fill(50);
+                text("제작: 9조 장한결 · 채시우 · 허진", width / 2, height / 2 - 40);
+
+                // 깜빡이는 라면 이미지
+                if (frameCount % 60 < 30) {
+                    let imgSize = 70;
+                    image(ramenImg, width / 2 - 280, height / 2 - 140, imgSize, imgSize);
+                    image(ramenImg, width / 2 + 210, height / 2 - 140, imgSize, imgSize);
+                }
+            }
+
+            function drawMainScene() {
+                text("다음화면 삽입", width / 2, height / 2);
+            }
+
+            function windowResized() {
+                resizeCanvas(windowWidth, windowHeight);
+                if (startButton) {
+                    startButton.position(width / 2 - 90, height / 2 + 120);
+                }
+            }
+        </script>
+    </div>
+</body>
+
+</html>
