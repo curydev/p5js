@@ -63,13 +63,6 @@
             let nextBtnCreated = false;
             let waterSound;
 
-            /*
-
-            function preload() {
-                waterSound = loadSound('물 따르는 소리.mp3');
-            }
-
-            */
 
             function setup() {
                 createCanvas(windowWidth, windowHeight);
@@ -93,13 +86,12 @@
                 faucetY = y - 380;
                 faucetSize = baseSize * 1.7;
 
-                drawFaucetWithWater(faucetX, faucetY, faucetSize);
+                drawFaucetWithWater(faucetX, faucetY + 20, faucetSize);
                 drawPot(x, y, baseSize * 2);
 
                 if (!pouring && waterLevel === 0) {
-                    drawArrowGuide(faucetX - 50, faucetY);
+                    drawArrowGuide(faucetX - 50, faucetY + 160);
                 }
-
             }
 
             function drawPot(x, y, baseSize) {
@@ -122,12 +114,12 @@
 
             function drawFaucetWithWater(x, y, baseSize) {
                 let pipeWidth = baseSize * 0.2;
-                let pipeHeight = baseSize * 0.7;
+                let pipeHeight = baseSize * 0.5;
 
                 fill(100);
                 rect(x, y + pipeHeight / 2, pipeWidth, pipeHeight, 5);
-                rect(x + pipeWidth, y, pipeHeight, pipeWidth, 10);
-                ellipse(x + pipeWidth + pipeHeight / 2, y, pipeWidth, pipeWidth);
+                rect(x + pipeWidth - 20, y, pipeHeight, pipeWidth, 10);
+                ellipse(x + pipeWidth - 20 + pipeHeight / 2, y, pipeWidth, pipeWidth);
 
                 stroke(160);
                 strokeWeight(4);
@@ -137,7 +129,7 @@
 
                 if (pouring) {
                     fill(0, 150, 255, 180);
-                    rect(x + pipeWidth + pipeHeight / 2, y + 150, pipeWidth * 0.5, 350, 5);
+                    rect(x + pipeWidth + 70, y + 170, pipeWidth * 0.5, 350, 5);
 
                     if (waterLevel < maxWaterLevel) {
                         waterLevel += 1;
@@ -170,21 +162,21 @@
                 }
             }
 
-            function drawArrowGuide(x, y) {
+            function drawArrowGuide(x, y) {  //가이드 자막
                 push();
                 textAlign(CENTER, CENTER);
                 textSize(24);
                 fill(50);
                 text("냄비에 물을 따라주세요!!", x + 50, y - 80);
 
-                if (frameCount % 60 < 30) {
+                if (frameCount % 60 < 30) { //물 따르기 시작하면 사라짐
                     fill(255, 0, 0);
                     noStroke();
 
                     beginShape();
-                    vertex(x + 40, y - 60);
-                    vertex(x + 60, y - 60);
-                    vertex(x + 50, y - 40);
+                    vertex(x + 40, y - 100);
+                    vertex(x + 60, y - 100);
+                    vertex(x + 50, y - 120);
                     endShape(CLOSE);
                 }
                 pop();
@@ -193,7 +185,6 @@
             function windowResized() {
                 resizeCanvas(windowWidth, windowHeight);
             }
-
 
             function checkWaterLevel() {
                 if (waterLevel === maxWaterLevel) {
