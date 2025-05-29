@@ -51,6 +51,11 @@
     <div>
         <script>
             let nextBtnCreated = false;
+            let timeCheckCalled = false;
+            let mouseInteractMode = false;
+            let startTime;
+            let runningTime;
+
 
             let handpose;
             let video;
@@ -76,6 +81,7 @@
             let scaleFactor = 1;
 
             function setup() {
+                startTime = millis();
                 createCanvas(windowWidth, windowHeight);
                 video = createCapture(VIDEO);
                 video.size(baseWidth, baseHeight);
@@ -98,8 +104,46 @@
             function modelReady() {
                 console.log('Handpose Model Loaded!');
             }
+            function timeCheck() {
+                if (!timeCheckCalled) {
+                    if (runningTime > 15000) {
+                        if (confirm('카메라 인터랙션에 어려움을 겪고 계신가요?')) {
+                            alert('마우스 인터랙션 모드로 전환합니다');
+                            mouseInteractMode = true;
+                            timeCheckCalled = true;
+                        }
+                        else {
+                            alert('카메라 인터랙션 모드를 유지합니다');
+                            timeCheckCalled = true;
+                        }
+                    }
+                }
+
+            }
+            function mousePressed() {
+                if (mouseInteractMode && !isTorn) {
+                    // 마우스 좌표를 640x480 기준으로 변환
+                    let scaledMouseX = (mouseX - (width - baseWidth * scaleFactor) / 2) / scaleFactor;
+                    let scaledMouseY = (mouseY - (height - baseHeight * scaleFactor) / 2) / scaleFactor;
+
+                    // 라면 봉지 위에서만 동작
+                    if (ramenBag.isOver(scaledMouseX, scaledMouseY)) {
+                        isTorn = true;
+                        // 핀치와 동일하게 tearPointX 계산
+                        tearPointX = scaledMouseX - (ramenBag.x - ramenBag.w / 2);
+                        tearPointX = constrain(tearPointX, ramenBag.w * 0.1, ramenBag.w * 0.9);
+                        // tearProgress도 핀치처럼 작게 (예: 20)
+                        tearProgress = 10;
+                        isPinching = false;
+                    }
+                }
+            }
+
+
 
             function draw() {
+                runningTime = millis() - startTime;
+                timeCheck();
                 background("#d2b48c");
 
                 // 1. 중앙 정렬 및 확대
@@ -146,13 +190,23 @@
                 fill(0);
                 textAlign(CENTER, TOP);
                 textSize(16 * scaleFactor);
-                text(
-                    "손가락을 라면 봉지 위에 올리고,\n엄지와 검지를 맞닿아 핀치한 후 상하로 움직여 뜯어보세요.",
-                    width / 2,
-                    20 * scaleFactor
-                );
+                if (!mouseInteractMode) {
+                    text(
+                        "손가락을 라면 봉지 위에 올리고,\n엄지와 검지를 맞닿아 핀치한 후 상하로 움직여 뜯어보세요.",
+                        width / 2,
+                        20 * scaleFactor
+                    );
+                }
+                else {
+                    text(
+                        "마우스 커서를 라면 봉지 위에 올리고,\n클릭하여 뜯어보세요.",
+                        width / 2,
+                        20 * scaleFactor
+                    );
+                }
+
                 if (isTorn) {
-                    text("봉지가 뜯어졌습니다!", width / 2, height - 40 * scaleFactor);
+                    text("봉지를 뜯었습니다!", width / 2, height - 40 * scaleFactor);
                     skipToNextScene();
                 }
             }
