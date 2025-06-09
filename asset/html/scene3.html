@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Art&Technology</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.7/lib/addons/p5.sound.min.js"></script>
     <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
     <style>
         body {
@@ -49,8 +50,209 @@
 
 <body>
     <div>
-        <h1>물 끓는 장면 제작 예정</h1>
-        <button type="button" id="btn" onclick="location.href='/p5js/asset/html/scene4.html'">다음 장면</button>
+        <script>
+            let inductionLevel = 0;
+            let startTime;
+            let elapsed;
+            let waterTemp = 25;
+            let steamParticles = [];
+            let boillingSound;
+            let boillingTimeStamp = null;
+            let mpressed = false;
+            let nextBtnCreated = false;
+            let fxVolume = 0;
+
+            function preload() {
+                soundFormats('mp3');
+                boillingSound = loadSound("/p5js/asset/sound/boillingSound.mp3");
+            }
+
+            class SteamParticle {
+                constructor(x, y) {
+                    this.x = x + random(-100, 100);
+                    this.y = y;
+                    this.vx = random(-0.5, 0.5);
+                    this.vy = random(-1, -3);
+                    this.alpha = 200;
+                    this.size = random(10, 20);
+                }
+
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    this.alpha -= 2;
+                }
+
+                display() {
+                    noStroke();
+                    fill(255, this.alpha);
+                    ellipse(this.x, this.y, this.size);
+                }
+            }
+
+            function mousePressed() {
+                mpressed = true;
+                if (dist(mouseX, mouseY, width * 2 / 5, height / 2 + 165) < 40) {
+                    if (inductionLevel > 0) {
+                        inductionLevel--;
+                    }
+                    else {
+                        inductionLevel = 0;
+                    }
+                    fill(random(0, 255));
+                    rect(0, 0, 50, 50);
+                }
+                else if (dist(mouseX, mouseY, width * 3 / 5, height / 2 + 165) < 40) {
+                    if (inductionLevel < 9) {
+                        inductionLevel++;
+                    }
+                    else {
+                        inductionLevel = 9;
+                    }
+                }
+            }
+
+            function generateSteam() {
+                if (steamParticles.length < 300) {
+                    // 매 프레임 조금씩 입자 생성
+                    steamParticles.push(new SteamParticle(width / 2, height / 2 - 10));
+                }
+            }
+            function drawSteam() {
+                for (let i = steamParticles.length - 1; i >= 0; i--) {
+                    let p = steamParticles[i];
+                    p.update();
+                    p.display();
+                    if (p.alpha <= 0) {
+                        steamParticles.splice(i, 1);
+                    }
+                }
+            }
+
+            function drawWater() {
+                push();
+                let alpha = 100;
+                noStroke();
+                fill(0, 150, 255, alpha);
+                ellipse(width / 2, height / 3 + 18, 320, 320);
+                pop();
+            }
+
+            function playSound() {
+                if (mpressed) {
+                    fxVolume = map(waterTemp, 25, 100, 0, 1);
+                    fxVolume = constrain(fxVolume, 0, 1);
+
+                    boillingSound.setVolume(fxVolume);
+                    if (!boillingSound.isPlaying()) {
+                        boillingSound.loop();
+                    }
+                }
+            }
+
+            function boilWater() {
+                if (waterTemp < 100) {
+                    if (0 < inductionLevel && inductionLevel <= 3) {
+                        waterTemp += 0.03;
+                    }
+                    else if (3 < inductionLevel && inductionLevel <= 6) {
+                        waterTemp += 0.09;
+                    }
+                    else if (6 < inductionLevel) {
+                        waterTemp += 0.18;
+                    }
+                }
+                else {
+                    generateSteam();
+                }
+
+            }
+            function skipToNextScene() {
+                if (!nextBtnCreated) {
+                    let btn = createButton('라면 포장지 뜯으러 가기');
+                    btn.position(width - 320, height - 80);
+                    btn.id('btn');
+                    btn.mousePressed(() => {
+                        location.href = ("/p5js/asset/html/scene4.html");
+                    });
+                    nextBtnCreated = true;
+                }
+            }
+
+            function drawPot(x, y, potSize) {
+                push();
+                rectMode(CENTER);
+                translate(x, y);
+                scale(potSize);
+                stroke(0);
+                strokeWeight(2);
+
+                fill(250, 230, 140);
+                rect(0, -16, 240, 20);
+
+                fill(120);
+                rect(-125, -20, 20, 50, 20);
+                rect(125, -20, 20, 50, 20);
+
+                fill(250, 230, 140);
+                ellipse(0, 0, 200, 200);
+                fill(230, 190, 70);
+                ellipse(0, 0, 180, 180);
+                fill(255, 245, 180);
+                ellipse(0, 25, 140, 130);
+                pop();
+            }
+
+            function drawInduction() {
+                push();
+                rectMode(CENTER);
+                fill(0);
+                //GLASS
+                rect(width / 2, height / 2, 500, 500, 18);
+                //CONTROL
+                stroke(100);
+                strokeWeight(2);
+                rect(width / 2, height / 2 + 160, 400, 80, 8);
+
+                textAlign(CENTER, CENTER);
+                strokeWeight(0);
+                textSize(40);
+                fill(100);
+                text("-", width * 2 / 5, height / 2 + 165);
+                text("+", width * 3 / 5, height / 2 + 165);
+
+                fill(255, 0, 0);
+                text(inductionLevel, width / 2, height / 2 + 165);
+                pop();
+            }
+            function setup() {
+                startTime = millis();
+                createCanvas(windowWidth, windowHeight);
+                background(190, 170, 139);
+                frameRate(60);
+            }
+
+
+            function draw() {
+                elapsed = millis() - startTime;
+
+                drawInduction();
+                drawPot(windowWidth / 2, windowHeight / 3, 2);
+                drawWater();
+                boilWater();
+                if (waterTemp >= 100 && boillingTimeStamp === null) {
+                    boillingTimeStamp = millis();
+                }
+                drawSteam();
+                playSound();
+
+
+                if (boillingTimeStamp && elapsed - boillingTimeStamp > 1500) {
+                    skipToNextScene();
+                }
+
+            }
+        </script>
     </div>
 </body>
 

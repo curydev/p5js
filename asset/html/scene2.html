@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Art&Technology</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.7/lib/addons/p5.sound.min.js"></script>
     <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
     <style>
         body {
@@ -50,150 +51,340 @@
 <body>
     <div>
         <script>
-            let waterLevel = 0;
-            let maxWaterLevel = 150;
-            let pouring = false;
+            let zoom = 1.0;
+            let startTime;
+            let scene = 0;
 
-            // 수도꼭지 위치 저장용
-            let faucetX = 0;
-            let faucetY = 0;
-            let faucetSize = 0;
-
-
+            let waterProgress = 0;
+            let waterGrowRate = 0.005;
+            let waterActive = false;
             let nextBtnCreated = false;
+            let tapStarted = false;
+            let ramenButton;
             let waterSound;
 
+            function preload() {
+                soundFormats('mp3');
+                waterSound = loadSound("/p5js/asset/sound/WaterPouringSound.mp3");
+            }
 
             function setup() {
                 createCanvas(windowWidth, windowHeight);
-                ellipseMode(CENTER);
-                rectMode(CENTER);
+                angleMode(DEGREES);
+                frameRate(60);
+                startTime = millis();
+
+                // 버튼 생성
+                ramenButton = createButton("라면봉지 뜯기");
+                ramenButton.position(windowWidth - 150, windowHeight - 50);
+                ramenButton.style("font-size", "16px");
+                ramenButton.style("padding", "10px");
+                ramenButton.hide();
+                ramenButton.mousePressed(() => {
+                    window.location.href = "next.html";
+                });
+
+                // 자동 장면 전환
+                setTimeout(() => {
+                    scene = 1;
+                    loop();
+                }, 3000);
             }
 
             function draw() {
-                checkWaterLevel();
-                background(240);
-                fill(210, 180, 140);
-                rect(0, 0, windowWidth * 2, windowHeight * 2);
-                fill(200);
-                rect(windowWidth / 2, windowHeight / 2, 900, 500);
-
-                let x = width / 2;
-                let y = height / 2;
-                let baseSize = 200;
-
-                faucetX = x - 150;
-                faucetY = y - 380;
-                faucetSize = baseSize * 1.7;
-
-                drawFaucetWithWater(faucetX, faucetY + 20, faucetSize);
-                drawPot(x, y, baseSize * 2);
-
-                if (!pouring && waterLevel === 0) {
-                    drawArrowGuide(faucetX - 50, faucetY + 160);
+                if (scene === 0) {
+                    drawScene0();
+                } else {
+                    drawScene1();
                 }
             }
 
-            function drawPot(x, y, baseSize) {
-                fill(80);
-                rect(x - 10, y + 300, 70, 300); // 냄비 손잡이
+            // ------------------------ 장면 0: 줌인 ------------------------
 
-                stroke(0);
-                strokeWeight(9);
-                noFill();
-                ellipse(x, y, baseSize * 0.95, baseSize * 0.95); // 냄비 테두리
+            function drawScene0() {
+                background(220);
+                let elapsed = millis() - startTime;
+                let progress = constrain(elapsed / 3000, 0, 1);
+                zoom = lerp(1.0, 2.0, progress);
 
+                const faucetScreenX = 200 + 290 * 0.8;
+                const faucetScreenY = 300 + 50 * 0.8;
+
+                push();
+                translate(faucetScreenX, faucetScreenY);
+                scale(zoom);
+                translate(-faucetScreenX + 100, -faucetScreenY + 100);
+                drawCounter(200, 300, 0.8);
+                drawWindow1(-1100, -300, 3);
+                pop();
+
+                if (progress >= 0.6) {
+                    noLoop();
+                }
+
+                drawPot1(windowWidth / 2, windowHeight * 4 / 5 + 20, 3);
+
+                fill(250, 200, 177);
                 noStroke();
-                fill(220);
-                ellipse(x, y, baseSize * 0.95, baseSize * 0.95); // 냄비 내부 바닥
-
-                let waterAlpha = map(waterLevel, 0, maxWaterLevel, 0, 255);
-                fill(0, 150, 255, waterAlpha); // 물
-                ellipse(x, y, baseSize * 0.9, baseSize * 0.9);
+                let rhandX = windowWidth / 7;
+                let rhandY = windowHeight * 6 / 7 + 130;
+                circle(rhandX, rhandY, 200);
+                circle(rhandX * 6, rhandY, 200);
             }
 
-            function drawFaucetWithWater(x, y, baseSize) {
-                let pipeWidth = baseSize * 0.2;
-                let pipeHeight = baseSize * 0.5;
+            // ------------------------ 장면 1: 물 받기 ------------------------
 
-                fill(100);
-                rect(x, y + pipeHeight / 2, pipeWidth, pipeHeight, 5);
-                rect(x + pipeWidth - 20, y, pipeHeight, pipeWidth, 10);
-                ellipse(x + pipeWidth - 20 + pipeHeight / 2, y, pipeWidth, pipeWidth);
+            function drawScene1() {
+                rectMode(CENTER);
+                ellipseMode(CENTER);
+                background(190, 170, 140);
 
-                stroke(160);
-                strokeWeight(4);
-                line(x, y - 10, x, y + 10);
-                line(x - 10, y, x + 10, y);
-                noStroke();
+                stroke(40);
+                strokeWeight(3);
+                line(0, 95, width, 95);
+                line(0, 50, width, 50);
 
-                if (pouring) {
-                    fill(0, 150, 255, 180);
-                    rect(x + pipeWidth + 70, y + 170, pipeWidth * 0.5, 350, 5);
+                let sinkX = windowWidth / 2;
+                let sinkY = windowHeight / 2;
 
-                    if (waterLevel < maxWaterLevel) {
-                        waterLevel += 1;
+                drawSink(sinkX, sinkY, 1.8);
+                drawPot(sinkX, sinkY - 30, 2.5);
+
+                let tapActive = mouseIsPressed && isMouseOverTap(sinkX, sinkY, 1.8);
+
+                if (tapActive) {
+                    tapStarted = true;
+
+                    let tapOutX = sinkX + 120 * 1.8;
+                    let tapOutY = sinkY + (-130) * 1.8;
+                    let potBottomY = sinkY - 30 + 25 * 2.5;
+
+                    stroke(0, 150, 255);
+                    strokeWeight(30);
+                    line(tapOutX - 150, tapOutY, sinkX, potBottomY);
+                    stroke(255);
+                    strokeWeight(8);
+                    line(tapOutX - 148, tapOutY - 2, sinkX + 3, potBottomY + 3);
+
+                    waterActive = true;
+                    if (waterProgress < 1) {
+                        waterProgress += waterGrowRate;
                     }
-                }
-            }
-
-            function mousePressed() {
-                let pipeWidth = faucetSize * 0.2;
-                let pipeHeight = faucetSize * 0.7;
-
-                if (
-                    mouseX >= faucetX - pipeWidth / 2 &&
-                    mouseX <= faucetX + pipeWidth / 2 &&
-                    mouseY >= faucetY &&
-                    mouseY <= faucetY + pipeHeight
-                ) {
-                    pouring = true;
 
                     if (!waterSound.isPlaying()) {
                         waterSound.loop();
                     }
+                } else {
+                    if (waterSound.isPlaying()) {
+                        waterSound.stop();
+                    }
                 }
-            }
 
-            function mouseReleased() {
-                pouring = false;
-                if (waterSound.isPlaying()) {
-                    waterSound.stop();
-                }
-            }
-
-            function drawArrowGuide(x, y) {  //가이드 자막
-                push();
-                textAlign(CENTER, CENTER);
-                textSize(24);
-                fill(50);
-                text("냄비에 물을 따라주세요!!", x + 50, y - 80);
-
-                if (frameCount % 60 < 30) { //물 따르기 시작하면 사라짐
-                    fill(255, 0, 0);
+                if (waterActive) {
+                    push();
                     noStroke();
-
-                    beginShape();
-                    vertex(x + 40, y - 100);
-                    vertex(x + 60, y - 100);
-                    vertex(x + 50, y - 120);
-                    endShape(CLOSE);
+                    let alpha = lerp(50, 200, waterProgress);
+                    fill(0, 150, 255, alpha);
+                    let w = lerp(252, 400, waterProgress);
+                    let h = lerp(234, 400, waterProgress);
+                    let y = lerp(sinkY + 45, sinkY, waterProgress);
+                    translate(sinkX, sinkY + 400);
+                    ellipse(0, y - (sinkY + 400), w, h);
+                    pop();
                 }
+
+                drawTap(sinkX, sinkY, 1.8);
+
+                if (!tapStarted) {
+                    fill(250);
+                    textAlign(CENTER, CENTER);
+                    textSize(40);
+                    text("수도꼭지의 검은 손잡이를 눌러 냄비에 물을 받아주세요!!", width / 2, height - 30);
+                }
+
+                if (waterProgress >= 1 && !nextBtnCreated) {
+                    skipToNextScene();
+                    nextBtnCreated = true;
+                }
+            }
+
+            // ------------------- 첫 장면 전용 냄비 및 창문 -------------------
+
+            function drawPot1(x, y, potSize) {
+                push();
+                rectMode(CORNER);
+                translate(x, y);
+                scale(potSize);
+                stroke(0);
+                strokeWeight(2);
+
+                fill(250, 230, 140);
+                rect(-140, 10, 280, 20);
+
+                fill(250, 230, 140);
+                rect(-100, 0, 200, 100, 20);
+
+
+
+                fill(120);
+                rect(-160, 0, 20, 40, 10); //손잡이
+                rect(140, 0, 20, 40, 10);
+
+                fill(230, 190, 70);
+                ellipse(0, 10, 200, 50);
+
+                fill(255, 245, 180);
+                ellipse(0, 15, 176, 40);
                 pop();
             }
 
-            function windowResized() {
-                resizeCanvas(windowWidth, windowHeight);
+            function drawWindow1(x, y, windowSize) {
+                push();
+                rectMode(CORNER);
+                translate(x, y);
+                scale(windowSize);
+
+                fill(120, 60, 30);
+                noStroke();
+                rect(300, 70, 150, 120, 10);
+
+                fill(0);
+                rect(305, 75, 140, 110, 8);
+
+                fill(255, 255, 200);
+                ellipse(405, 120, 60, 60);
+
+                fill(10, 10, 30);
+                ellipse(415, 120, 60, 60);
+
+                stroke(140, 110, 80);
+                strokeWeight(2);
+                line(374, 73, 374, 185);
+                line(303, 130, 445, 130);
+                pop();
             }
 
-            function checkWaterLevel() {
-                if (waterLevel === maxWaterLevel) {
-                    skipToNextScene();
-                }
+            // ------------------- 공통 or scene1 전용 함수 -------------------
+
+            function drawCounter(x, y, s) {
+                push();
+                translate(x, y);
+                scale(s);
+                stroke(0);
+                strokeWeight(2);
+
+                fill(155, 140, 120, 200);
+                rect(500, -1000, 500, 10000);
+
+                fill(120, 90, 60);
+                quad(-400, 660, 530, 660, 1000, 1000, -400, 1000);
+
+                fill(190, 170, 140);
+                quad(100, 100, 500, 100, 530, 160, 70, 160);
+
+                fill(200);
+                quad(-400, 100, 100, 100, 70, 160, -430, 160);
+
+                fill(170, 150, 120);
+                quad(70, 160, 530, 160, 530, 660, 70, 660);
+
+                fill(160);
+                ellipse(300, 130, 200, 15);
+                fill(140);
+                arc(300, 132, 190, 20, 0, 180);
+
+                fill(100);
+                ellipse(300, 137, 20, 6);
+
+                fill(80);
+                stroke(0);
+                strokeWeight(1.5);
+                rect(290, 50, 20, 60, 3);
+                strokeWeight(2);
+                arc(300, 70, 50, 70, 180, 360);
+                pop();
             }
+
+            function drawPot(x, y, potSize) {
+                push();
+                translate(x, y);
+                scale(potSize);
+                stroke(0);
+                strokeWeight(2);
+
+                fill(250, 230, 140);
+                rect(0, -16, 240, 20);
+
+                fill(120);
+                rect(-125, -20, 20, 50, 20);
+                rect(125, -20, 20, 50, 20);
+
+                fill(250, 230, 140);
+                ellipse(0, 0, 200, 200);
+                fill(230, 190, 70);
+                ellipse(0, 0, 180, 180);
+                fill(255, 245, 180);
+                ellipse(0, 25, 140, 130);
+                pop();
+            }
+
+            function drawSink(x, y, sinkSize) {
+                push();
+                translate(x, y);
+                scale(sinkSize);
+
+                stroke(40);
+                strokeWeight(3);
+                fill(140, 140, 140);
+                rect(0, 0, 480, 400, 40);
+
+                strokeWeight(3);
+                fill(185);
+                rect(0, 0, 420, 350, 50);
+
+                fill(128, 192, 176);
+                stroke(40);
+                ellipse(0, 0, 80, 80);
+
+                fill(30, 30, 30);
+                noStroke();
+                ellipse(0, 0, 30, 30);
+                pop();
+            }
+
+            function drawTap(x, y, tapSize) {
+                push();
+                translate(x, y);
+                scale(tapSize);
+
+                stroke(40);
+                strokeWeight(4);
+                fill(130);
+                rect(90, -155, 40, 80, 10);
+                rect(70, -130, 100, 30, 10);
+                fill(0);
+                ellipse(120, -130, 25, 25);
+                pop();
+            }
+
+            function isMouseOverTap(x, y, scaleFactor) {
+                let tapOutX = x + 120 * scaleFactor;
+                let tapOutY = y + (-130) * scaleFactor;
+                let d = dist(mouseX, mouseY, tapOutX, tapOutY);
+                return d < (25 * scaleFactor) / 2;
+            }
+
+            function mousePressed() {
+                if (scene === 1) loop();
+            }
+
+            function mouseReleased() {
+                if (scene === 1) noLoop();
+            }
+
             function skipToNextScene() {
                 if (!nextBtnCreated) {
-                    let btn = createButton('다음 장면으로 넘어가려면 클릭하세요');
+                    let btn = createButton('물 끓이러 가기');
                     btn.position(width - 320, height - 80);
                     btn.id('btn');
                     btn.mousePressed(() => {

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Art&Technology</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.js"></script>
+    <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+
+        #btn {
+            width: 300px;
+            background-color: #fcfcfc;
+            color: #676767;
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 18px;
+            transition: background-color 0.2s ease-in,
+                color 0.2s ease-in;
+        }
+
+        #btn:hover {
+            background-color: #676767;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 18px;
+            transition: background-color 0.2s ease-in,
+                color 0.2s ease-in;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <script>
+            let startTime;
+            let phase = 0;
+            let currentWeight = 0;
+            let scene = 0;
+            let nextBtnCreated = false;
+
+            let img1, img2;
+
+            function preload() {
+
+                img1 = loadImage("/p5js/asset/image/왼발.png");
+                img2 = loadImage("/p5js/asset/image/오른발.png");
+            }
+
+            function setup() {
+                createCanvas(windowWidth, windowHeight);
+                angleMode(DEGREES);
+                startTime = millis();
+                textFont("Arial");
+
+                // 브라우저에서 오디오 재생 허용
+
+            }
+
+            function draw() {
+                if (scene === 0) {
+                    background(204, 102, 0); // 베이지 배경
+                    drawSecondScene();
+
+                    let t = millis() - startTime;
+
+                    if (t > 4000) {
+                        drawButton("다음", width - 250, height - 80, 200, 50);
+                    }
+                } else if (scene === 1) {
+                    background(204, 102, 0); // 체중계 배경
+                    drawFloor();
+                    chair();
+                    drawGorbelly();
+                }
+            }
+
+            function chair() {
+                push();
+                fill(0);
+                stroke(0);
+                rect(windowWidth / 2 - 200, windowHeight - 200, 400, 400);
+                pop();
+            }
+
+            function drawGorbelly() {
+                push();
+                strokeWeight(5);
+                //사람 발 
+                image(img1, windowWidth / 2 - 250, windowHeight - 500, 200, 200);
+                image(img2, windowWidth / 2 + 50, windowHeight - 500, 200, 200);
+
+                // 사람 다리 
+                stroke(37, 74, 111);
+
+                fill(64, 128, 191);
+                arc(windowWidth / 2 - 200, windowHeight, 300, 800, 180, 360);
+                arc(windowWidth / 2 + 200, windowHeight, 300, 800, 180, 360);
+
+                // 사람 배
+                stroke(114, 80, 54);
+                fill(255, 220, 180);
+
+                arc(windowWidth / 2, windowHeight, 600, 300, 180, 360);
+
+                line(windowWidth / 2 - 40, windowHeight - 100, windowWidth / 2 + 50, windowHeight - 120);
+                line(windowWidth / 2 - 40, windowHeight - 120, windowWidth / 2 + 50, windowHeight - 100);
+                // 말풍선
+                noStroke();
+                drawSpeechBubble(width / 2 + 300, height / 2 + 200, "하.. 진짜 말도 안돼");
+                pop();
+                skipToNextScene();
+            }
+            function drawSpeechBubble(x, y, msg) {
+                fill(255);
+                stroke(0);
+                triangle(x, y + 30, x - 10, y + 50, x + 10, y + 30);
+                rect(x, y, 200, 50, 10);
+                fill(0);
+                noStroke();
+                textSize(20);
+                textAlign(LEFT, CENTER);
+                text(msg, x + 10, y + 20);
+            }
+            function drawSecondScene() {
+                drawFloor();
+                let t = millis() - startTime;
+
+                if (t < 1000) {
+                    drawScale(windowWidth / 3, windowHeight / 4, 3, false, true, 0);
+                } else if (t < 2000) {
+                    drawScale(windowWidth / 3, windowHeight / 4, 3, true, true, 0);
+                } else if (t < 5000) {
+                    let progress = constrain((t - 2000) / 5000, 0, 1);
+                    currentWeight = floor(progress * 11) * 15;
+                    if (currentWeight > 60) currentWeight = 60;
+                    drawScale(windowWidth / 3, windowHeight / 4, 3, true, true, currentWeight);
+                }
+                else {
+                    drawScale(windowWidth / 3, windowHeight / 4, 3, true, true, 60);
+                    if (t < 7000) {
+                        drawSubtitle("나 : 뭐야!! 60kg?!");
+                    } else if (t < 9000) {
+                        drawSubtitle("나 : 아니 라면하나 먹었다고?!");
+                    }
+                }
+            }
+
+            function drawButton(label, x, y, w, h) {
+                fill(50);
+                stroke(255);
+                strokeWeight(2);
+                rect(x, y, w, h, 10);
+                fill(255);
+                noStroke();
+                textSize(20);
+                textAlign(CENTER, CENTER);
+                text(label, x + w / 2, y + h / 2);
+            }
+
+            function mousePressed() {
+                if (scene === 0) {
+                    let btnX = width - 250;
+                    let btnY = height - 80;
+                    let btnW = 200;
+                    let btnH = 50;
+                    if (mouseX > btnX && mouseX < btnX + btnW && mouseY > btnY && mouseY < btnY + btnH) {
+                        scene = 1;
+                        startTime = millis();
+                    }
+                }
+            }
+
+
+
+            function drawFloor() {
+                stroke(160, 210, 180);
+                strokeWeight(1);
+                for (let j = 0; j < height; j += 80) {
+                    line(0, j, width, j);
+                }
+            }
+
+            function drawScale(x, y, scaleSize, showLeft, showRight, weight) {
+                let w = 200 * scaleSize;
+                let h = 180 * scaleSize;
+                let r = 20 * scaleSize;
+                let displayW = 100 * scaleSize;
+                let displayH = 40 * scaleSize;
+
+                fill(180);
+                stroke(40);
+                strokeWeight(5);
+                rect(x, y, w, h, r);
+
+                fill(30);
+                rect(x + w / 2 - displayW / 2, y + 20 * scaleSize, displayW, displayH, 5 * scaleSize);
+
+                fill(0, 255, 0);
+                textAlign(CENTER, CENTER);
+                textSize(20 * scaleSize);
+                text(weight.toFixed(1) + " kg", x + w / 2, y + 20 * scaleSize + displayH / 2);
+
+                if (showLeft) {
+                    image(img1, windowWidth * 3 / 11, windowHeight * 2 / 5, 400, 400);
+                }
+                if (showRight) {
+                    image(img2, windowWidth * 5 / 9, windowHeight * 2 / 5, 400, 400);
+                }
+            }
+
+            function drawSubtitle(textContent) {
+                fill(255);
+                textAlign(CENTER, CENTER);
+                textSize(50);
+                text(textContent, width / 2, height - 40);
+            }
+
+            function skipToNextScene() {
+                if (!nextBtnCreated) {
+                    let btn = createButton('다음 장면으로 넘어가려면 클릭하세요');
+                    btn.position(width - 320, height - 80);
+                    btn.id('btn');
+                    btn.mousePressed(() => {
+                        location.href = ("/p5js/asset/html/endingcredit.html");
+                    });
+                    nextBtnCreated = true; // 버튼 생성 플래그
+                }
+            }
+        </script>
+    </div>
+</body>
+
+</html>

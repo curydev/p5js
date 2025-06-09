@@ -49,8 +49,259 @@
 
 <body>
     <div>
-        <h1>라면 시식 장면, 배부른 사람 제작 예정</h1>
-        <button type="button" id="btn" onclick="location.href='/p5js/asset/html/endingcredit.html'">다음 장면</button>
+        <script>
+            let lidOpen = false;
+            let lidY = 0;
+            let steamParticles = [];
+            let noodlesLifted = false;
+            let nextBtnCreated = false;
+
+
+            function setup() {
+                createCanvas(600, 600);
+                angleMode(DEGREES);
+                //noLoop();
+            }
+
+            function draw() {
+                background(220);
+
+                let potX = width / 2;
+                let potY = height / 2 + 50;
+                let potSize = 2;
+
+                drawTable();
+                drawPot(potX, potY, potSize);
+
+                drawPot(width / 2, height / 2 + 50, 2);
+
+                // 뚜껑 열림 애니메이션
+                drawPA(250, 400, 10, 50);
+                drawPA(384, 461, 10, 5);
+                drawPA(387, 369, 10, 5);
+                drawPA(364, 428, 10, 5);
+                drawPA(368, 276, 10, 5);
+                drawPA(257, 357, 10, 5);
+                drawPA(233, 494, 10, 5);
+                drawPA(357, 280, 10, 5);
+                drawPA(286, 482, 10, 5);
+                drawPA(177, 445, 10, 5);
+                drawPA(199, 340, 10, 5);
+                drawPA(145, 366, 10, 5);
+                drawEgg();
+                if (!lidOpen) {
+
+                    lidY = 0;
+                    drawLid(width / 2, height / 2 - 20 - lidY);
+                } else {
+                    if (lidY < 500) {
+                        loop();
+                        lidY += 5; // 점점 위로 이동
+                        drawLid(width / 2, height / 2 - 20 - lidY);
+                    }
+                    drawLid(width / 2, height / 2 - 20 - lidY);
+                    generateSteam();
+                    drawSteam();
+
+                }
+
+                drawChopsticks(mouseX, mouseY);
+
+                if (lidOpen && checkChopstickTouchNoodles(mouseX, mouseY)) {
+                    noodlesLifted = true;
+                } else {
+                    noodlesLifted = false;
+                }
+
+                if (noodlesLifted) {
+                    drawLiftedNoodle(width / 2, height / 2 + 65); // 면발 위치 조정
+                }
+            }
+
+            function drawTable() {
+                fill(170, 120, 70);
+                rect(0, 150, width, width);
+            }
+
+            function drawPot(x, y, potSize) {
+                push();
+                translate(x, y);
+                scale(potSize);
+                stroke(0);
+                strokeWeight(2);
+
+                // 냄비 테두리
+                fill(250, 230, 140);
+                rectMode(CENTER);
+                rect(0, 5, 240, 20);
+
+                // 냄비 손잡이
+                fill(120);
+                rectMode(CORNER);
+                rect(-125, -20, 20, 50, 20);
+                rect(105, -20, 20, 50, 20);
+
+
+
+                // 냄비 본체
+                fill(250, 230, 140);
+                ellipse(0, 0, 200, 200);
+                fill(230, 190, 70);
+                ellipse(0, 0, 180, 180);
+                fill(255, 245, 180); // 냄비 바닥 색
+                ellipse(0, 25, 140, 130); // 옆면
+                noStroke();
+                fill(255, 117, 26, 250); //국물 색
+                ellipse(0, 10, 160, 160); //라면 국물
+
+
+                // 라면 면발
+                push();
+                translate(0, 25); // 라면을 물 위에 위치
+                drawRamenNoodles();
+                pop();
+
+                pop();
+            }
+
+
+            function drawRamenNoodles() {
+                noFill();
+                stroke(255, 220, 60, 200); // 약간 반투명한 노란 면발
+                strokeWeight(4);
+
+                for (let i = -110; i <= 130; i += 20) {
+                    beginShape();
+                    for (let y = -70; y <= 45; y += 5) {
+                        let x = sin((y + i) * 6) * 10; //  더 자주, 더 크게 흔들리게
+                        vertex(x + i / 2, y);
+                    }
+                    endShape();
+                }
+            }
+            function drawPA(cx, cy, radius, count) {
+                fill(0, 200, 0); // 초록색
+                noStroke();
+
+                for (let i = 0; i < count; i++) {
+                    // 극좌표계: 반지름과 각도를 랜덤으로 선택
+                    let angle = random(TWO_PI);
+                    let r = radius * sqrt(random()); // 균등 분포를 위해 sqrt 사용
+                    let x = cx + r * cos(angle);
+                    let y = cy + r * sin(angle);
+
+                    // 작은 네모 그리기 (가로세로 6픽셀)
+                    square(x, y, 6);
+                }
+            }
+            function drawEgg() {
+                fill(255, 255, 255, 170);
+                ellipse(343, 326, 120, 100);
+                fill(255, 255, 0, 200);
+                ellipse(343, 320, 60, 60);
+            }
+            //냄비 뚜껑
+            function drawLid(x, y) {
+                push();
+                translate(x, y);
+                fill(150);
+                stroke(0);
+                strokeWeight(2);
+                ellipse(0, 60, 380, 380);
+                fill(100);
+                ellipse(0, -10, 50, 40);
+                pop();
+            }
+
+            function mousePressed() {
+                // 뚜껑 클릭 시 열기
+                if (!lidOpen && dist(mouseX, mouseY, width / 2, height / 2 - 20) < 100) {
+                    lidOpen = true;
+                    skipToNextScene();
+                }
+
+            }
+
+            function generateSteam() {
+                if (steamParticles.length < 300) {
+                    // 매 프레임 조금씩 입자 생성
+                    steamParticles.push(new SteamParticle(width / 2, height / 2 - 10));
+                }
+            }
+
+            function drawSteam() {
+                for (let i = steamParticles.length - 1; i >= 0; i--) {
+                    let p = steamParticles[i];
+                    p.update();
+                    p.display();
+                    if (p.alpha <= 0) {
+                        steamParticles.splice(i, 1);
+                    }
+                }
+            }
+
+            class SteamParticle {
+                constructor(x, y) {
+                    this.x = x + random(-100, 100);
+                    this.y = y;
+                    this.vx = random(-0.5, 0.5);
+                    this.vy = random(-1, -3);
+                    this.alpha = 200;
+                    this.size = random(10, 20);
+                }
+
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    this.alpha -= 2;
+                }
+
+                display() {
+                    noStroke();
+                    fill(255, this.alpha);
+                    ellipse(this.x, this.y, this.size);
+                }
+            }
+
+            function drawChopsticks(x, y) {
+                stroke(80);
+                strokeWeight(6);
+                line(x - 10, y, x - 30, y - 200);
+                line(x + 10, y, x + 30, y - 200);
+            }
+
+            function checkChopstickTouchNoodles(x, y) {
+                let potX = width / 2;
+                let potY = height / 2 + 50;
+                let d = dist(x, y, potX, potY);
+                return d < 60;
+            }
+
+            function drawLiftedNoodle(x, y) {
+                push();
+                translate(x, y);
+                stroke(255, 220, 60);
+                strokeWeight(4);
+                // 면발 꼬불꼬불 애니메이션
+                for (let i = 0; i < 10; i++) {
+                    let offset = sin(frameCount * 10 + i * 15) * 5;
+                    line(i * 5, 0, i * 5 + offset, 500 + offset);
+                }
+                pop();
+            }
+
+            function skipToNextScene() {
+                if (!nextBtnCreated) {
+                    let btn = createButton('다음 장면으로 넘어가려면 클릭하세요');
+                    btn.position(windowWidth - 320, windowHeight - 80);
+                    btn.id('btn');
+                    btn.mousePressed(() => {
+                        location.href = ("/p5js/asset/html/scene6.html");
+                    });
+                    nextBtnCreated = true; // 버튼 생성 플래그
+                }
+            }
+        </script>
     </div>
 </body>
 
